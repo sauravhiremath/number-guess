@@ -19,6 +19,7 @@ class State extends Schema {
 export default class RandomGuessRoom extends Room {
     onCreate() {
         this.setState(new State());
+        this.sendNewNumber();
 
         this.onMessage('guess', (client, message) => this.playerAction(client, message));
 
@@ -48,6 +49,14 @@ export default class RandomGuessRoom extends Room {
         if (remainingPlayerIds.length > 0) {
             this.state.winner = remainingPlayerIds[0];
         }
+    }
+
+    sendNewNumber() {
+        const secretNumber = (Math.random() * (MAX_NUMBER - MIN_NUMBER + 1)) << 0;
+        this.state.secretNumber = secretNumber;
+        this.broadcast(`The New Number by server is ${secretNumber}`, {
+            afterNextPatch: true
+        });
     }
 
     setAutoMoveTimeout() {
@@ -116,6 +125,7 @@ export default class RandomGuessRoom extends Room {
                 this.broadcast(`Player ${player.username} is the Winner, number was ${secretNumber}`, {
                     afterNextPatch: true
                 });
+                this.sendNewNumber();
             } else if (this.isGameEnd()) {
                 this.state.draw = true;
                 this.broadcast(`Game Ends in Draw, the number was ${secretNumber}`, {
