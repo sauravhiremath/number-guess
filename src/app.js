@@ -18,8 +18,8 @@ const gameServer = new Server({
 gameServer.define('random-guess-lobby', LobbyRoom);
 gameServer.define('random-guess', RandomGuessHandler).enableRealtimeListing();
 
-app.use(cors({ origin: HOSTS, credentials: true }));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 routes(app);

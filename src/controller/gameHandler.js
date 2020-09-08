@@ -30,6 +30,7 @@ export default class RandomGuessRoom extends Room {
 
     onJoin(client) {
         this.state.players[client.sessionId] = new Player();
+        logger.info(this.state.players);
         if (Object.keys(this.state.players).length === MAX_CLIENTS) {
             this.state.currentTurn = client.sessionId;
             this.setAutoMoveTimeout();
@@ -54,7 +55,8 @@ export default class RandomGuessRoom extends Room {
     sendNewNumber() {
         const secretNumber = (Math.random() * (MAX_NUMBER - MIN_NUMBER + 1)) << 0;
         this.state.secretNumber = secretNumber;
-        this.broadcast(`The New Number by server is ${secretNumber}`, {
+        // Debug purpose only
+        this.broadcast('new-secret', `The New Number by server is ${secretNumber}`, {
             afterNextPatch: true
         });
     }
@@ -87,10 +89,10 @@ export default class RandomGuessRoom extends Room {
         }
 
         if (Math.abs(guessedNumber - secretNumber) <= GUESS_THRESHOLD) {
-            this.send(client, 'You are very close to answer. 🔥🔥');
+            client.send('private-message', { data: 'You are very close to answer. 🔥🔥' });
         }
 
-        this.send(client, 'Try harder, you nowhere near 🥶🥶');
+        client.send('private-message', { data: 'Try harder, you nowhere near 🥶🥶' });
         return false;
     }
 
@@ -111,27 +113,31 @@ export default class RandomGuessRoom extends Room {
             return false;
         }
 
-        if (client.sessionId === this.state.currentTurn) {
-            this.state.players[client.sessionId] = this.incrementPlayerChance(client);
+        logger.info(this.state);
 
+        if (client.sessionId === this.state.currentTurn) {
             const { guessedNumber } = data;
             const { players, secretNumber } = this.state;
             const player = players[client.sessionId];
 
-            this.broadcast(`Player ${player.username} guessed ${guessedNumber}`, { except: client });
+            this.broadcast('game-response', `Player ${player.username} guessed ${guessedNumber}`, { except: client });
 
             if (this.checkWin(client, guessedNumber)) {
                 this.state.winner = client.sessionId;
-                this.broadcast(`Player ${player.username} is the Winner, number was ${secretNumber}`, {
+                this.broadcast('game-response', `Player ${player.username} is the Winner, number was ${secretNumber}`, {
                     afterNextPatch: true
                 });
+                this.state.players[client.sessionId] = this.incrementPlayerChance(client);
                 this.sendNewNumber();
             } else if (this.isGameEnd()) {
                 this.state.draw = true;
-                this.broadcast(`Game Ends in Draw, the number was ${secretNumber}`, {
+                this.broadcast('game-response', `Game Ends in Draw, the number was ${secretNumber}`, {
                     afterNextPatch: true
                 });
             } else {
+                // Increment Turns
+                this.state.players[client.sessionId] = this.incrementPlayerChance(client);
+
                 // Switch turns
                 const sortedOrderPlayers = this.state.players.sort((arg1, arg2) => {
                     return arg1.chancesPlayed > arg2.chancesPlayed ? 1 : -1;
