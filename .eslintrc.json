@@ -20,6 +20,7 @@
     },
     "plugins": ["prettier"],
     "rules": {
+        "no-unused-vars": [2, { "args": "after-used", "argsIgnorePattern": "^_" }],
         "prettier/prettier": "error",
         "object-curly-spacing": ["warn", "always"],
         "indent": ["error", 4, { "SwitchCase": 1 }],
