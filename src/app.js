@@ -10,8 +10,10 @@ import { handleError, logger } from './middlewares';
 import { API_PORT, HOSTS } from './env';
 
 const app = express();
-const server = new http.Server(app);
-const gameServer = new Server({ server });
+const gameServer = new Server({
+    server: new http.Server(app),
+    express: app
+});
 
 gameServer.define('random-guess-lobby', LobbyRoom);
 gameServer.define('random-guess', RandomGuessHandler).enableRealtimeListing();
@@ -26,11 +28,6 @@ app.use((err, _req, res, _) => {
     handleError(err, res);
 });
 
-app.listen(API_PORT, () => {
-    logger.info(`HTTP Api listening on port ${Number(API_PORT)}!`);
-});
-
-gameServer.listen(Number(API_PORT) + 1);
-logger.info(`Game Server listening on port ${Number(API_PORT) + 1}!`);
-
-logger.info(`HTTP Api and Colyseus whitelisted for <${HOSTS}>`);
+gameServer.listen(Number(API_PORT));
+logger.info(`Server listening on port ${Number(API_PORT)}!`);
+logger.info(`Whitelisted endpoints: <${HOSTS}>`);
